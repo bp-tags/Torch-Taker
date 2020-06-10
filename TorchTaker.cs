@@ -5,6 +5,7 @@
 
 using System;
 using UnityEngine;
+using DaggerfallConnect;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Utility.AssetInjection;
@@ -21,15 +22,17 @@ namespace TorchTaker
     [FullSerializer.fsObject("v1")]
     public class TorchTakerSaveData
     {
-        public List<GameObject> DousedTorches;
+        public int DungeonID;
+        public List<Vector3> DousedTorches;
     }
 
     public class TorchTaker : MonoBehaviour, IHasModSaveData
     {
-
         static Mod mod;
         static TorchTaker instance;
-        static List<GameObject> dousedTorches;
+        static GameObject Torch;
+        static int dungeonID;
+        static List<Vector3> dousedTorches;
 
         public Type SaveDataType
         {
@@ -40,7 +43,8 @@ namespace TorchTaker
         {
             return new TorchTakerSaveData
             {
-                DousedTorches = new List<GameObject>()
+                DungeonID = GameManager.Instance.PlayerGPS.CurrentMapID,
+                DousedTorches = new List<Vector3>()
             };
         }
 
@@ -48,6 +52,7 @@ namespace TorchTaker
         {
             return new TorchTakerSaveData
             {
+                DungeonID = dungeonID,
                 DousedTorches = dousedTorches
             };
         }
@@ -55,13 +60,19 @@ namespace TorchTaker
         public void RestoreSaveData(object saveData)
         {
             var torchTakerSaveData = (TorchTakerSaveData)saveData;
-            dousedTorches = torchTakerSaveData.DousedTorches;
-            foreach (GameObject torch in dousedTorches)
+            if (GameManager.Instance.PlayerGPS.CurrentMapID == torchTakerSaveData.DungeonID)
             {
-                DouseTorch(torch);
+                RaycastHit hit;
+                dousedTorches = torchTakerSaveData.DousedTorches;
+                foreach (Vector3 torch in dousedTorches)
+                {
+                    Ray ray = new Ray(torch + (Vector3.down * 1f), Vector3.up);
+                    if (Physics.Raycast(ray, out hit, 2))
+                        Torch = hit.transform.gameObject;
+                    DouseTorch(Torch);
+                }
             }
         }
-
 
         [Invoke(StateManager.StateTypes.Start, 0)]
         public static void Init(InitParams initParams)
@@ -85,8 +96,10 @@ namespace TorchTaker
         private static void TakeTorch(RaycastHit hit)
         {
             GameObject torch;
+            Vector3 torchPos;
             torch = hit.transform.gameObject;
-            dousedTorches.Add(torch);
+            torchPos = torch.transform.position;
+            dousedTorches.Add(torchPos);
             DouseTorch(torch);
             DaggerfallUnityItem TorchItem = ItemBuilder.CreateItem(ItemGroups.UselessItems2, (int)UselessItems2.Torch);
             GameManager.Instance.PlayerEntity.Items.AddItem(TorchItem);
