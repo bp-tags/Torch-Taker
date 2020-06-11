@@ -110,20 +110,17 @@ namespace TorchTaker
 
         private static void DouseTorches()
         {
-            private static void DouseTorches()
+            if (dousedTorches.Count > 0)
             {
-                if (dousedTorches.Count > 0)
+                List<GameObject> allUntaggedObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("Untagged"));
+                foreach (GameObject obj in allUntaggedObjects)
                 {
-                    List<GameObject> allUntaggedObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("Untagged"));
-                    foreach (GameObject obj in allUntaggedObjects)
+                    foreach (Vector3 torch in dousedTorches)
                     {
-                        foreach (Vector3 torch in dousedTorches)
+                        if (obj.transform.position == torch)
                         {
-                            if (obj.transform.position == torch)
-                            {
-                                Torch = obj;
-                                DouseTorch(Torch);
-                            }
+                            Torch = obj;
+                            DouseTorch(Torch);
                         }
                     }
                 }
