@@ -5,18 +5,12 @@
 
 using System;
 using UnityEngine;
-using DaggerfallConnect;
 using DaggerfallWorkshop.Game;
 using DaggerfallWorkshop.Game.Utility.ModSupport;
-using DaggerfallWorkshop.Utility.AssetInjection;
-using DaggerfallWorkshop.Game.UserInterfaceWindows;
 using DaggerfallWorkshop.Game.Items;
 using DaggerfallWorkshop.Utility;
 using DaggerfallWorkshop;
-using DaggerfallConnect.Utility;
 using System.Collections.Generic;
-using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
-using DaggerfallWorkshop.Game.MagicAndEffects;
 
 namespace TorchTaker
 {
@@ -34,7 +28,7 @@ namespace TorchTaker
         static GameObject Torch;
         static int dungeonID;
         static List<Vector3> dousedTorches;
-        static bool loadedDousedTorches = false;
+        static bool loadedDousedTorches;
 
         static PlayerEnterExit playerEnterExit = GameManager.Instance.PlayerEnterExit;
         static DaggerfallUnity dfUnity = DaggerfallUnity.Instance;
@@ -67,7 +61,7 @@ namespace TorchTaker
             var torchTakerSaveData = (TorchTakerSaveData)saveData;
             loadedDousedTorches = false;
             dousedTorches = torchTakerSaveData.DousedTorches;
-            EntityEffectBroker.OnNewMagicRound += DouseTorches;
+            DouseTorches();
         }
 
         [Invoke(StateManager.StateTypes.Start, 0)]
@@ -82,27 +76,27 @@ namespace TorchTaker
             PlayerActivate.RegisterCustomActivation(mod, 210, 16, TakeTorch);
             PlayerActivate.RegisterCustomActivation(mod, 210, 17, TakeTorch);
             PlayerActivate.RegisterCustomActivation(mod, 210, 18, TakeTorch);
-
-            PlayerEnterExit.OnTransitionDungeonInterior += RemoveVanillaLightSources;
-            PlayerEnterExit.OnTransitionDungeonInterior += AddImprovedLighting;
+            
             PlayerEnterExit.OnTransitionExterior += OnTransitionExterior_ListCleanup;
             PlayerEnterExit.OnTransitionDungeonExterior += OnTransitionExterior_ListCleanup;
-
-            EntityEffectBroker.OnNewMagicRound += DouseTorches_OnNewMagicRound;
-
-            mod.IsReady = true;
         }
 
-        void Update()
+        void Awake()
         {
-            if (!dfUnity.IsReady || !playerEnterExit || GameManager.IsGamePaused)
-                return;
+            Mod iil = ModManager.Instance.GetMod("Improved Interior Lighting");
+            if (iil != null)
+            {
+                Debug.Log("[Torch Taker] Improved Interior Lighting is active");
+            }
+            else
+            {
+                PlayerEnterExit.OnTransitionDungeonInterior += RemoveVanillaLightSources;
+                PlayerEnterExit.OnTransitionDungeonInterior += AddVanillaLightToLightSources;
+                Debug.Log("[Torch Taker] Improved Interior Lighting is not active");
+            }
+                
 
-            //if (!loadedDousedTorches)
-            //{
-            //    loadedDousedTorches = true;
-            //    DouseTorches();
-            //}
+            mod.IsReady = true;
         }
 
         private static void RemoveVanillaLightSources(PlayerEnterExit.TransitionEventArgs args)
@@ -115,7 +109,7 @@ namespace TorchTaker
             }
         }
 
-        private static void AddImprovedLighting(PlayerEnterExit.TransitionEventArgs args)
+        private static void AddVanillaLightToLightSources(PlayerEnterExit.TransitionEventArgs args)
         {
             DaggerfallBillboard[] lightBillboards = (DaggerfallBillboard[])FindObjectsOfType(typeof(DaggerfallBillboard)); //Get all "light emitting objects" in the dungeon
             foreach (DaggerfallBillboard billBoard in lightBillboards)
@@ -131,7 +125,6 @@ namespace TorchTaker
 
         private static GameObject AddLight(DaggerfallUnity dfUnity, GameObject torch, Transform parent)
         {
-            //float range = obj.Resources.LightResource.Radius * MeshReader.GlobalScale;
             GameObject go = GameObjectHelper.InstantiatePrefab(dfUnity.Option_DungeonLightPrefab.gameObject, string.Empty, parent, torch.transform.position);
             Light light = go.GetComponent<Light>();
             if (light != null)
@@ -141,14 +134,8 @@ namespace TorchTaker
             return go;
         }
 
-        private static void DouseTorches_OnNewMagicRound()
-        {
-            Debug.Log("Dousing Torches");
-            DouseTorches();
-        }
-
         private static void DouseTorches()
-        {
+        {           
             if (dousedTorches != null && dousedTorches.Count > 0)
             {
                 //Code for dousing torches that did not work as I do not have any unique idetnifier for the torches.
@@ -176,36 +163,39 @@ namespace TorchTaker
                         DouseTorch(torch);
                     }
                 }
-                Debug.Log("Torches doused");
+                dousedTorches.Clear();
+                Debug.Log("[Torch Taker] Savegame torches doused");
             }
-            else
-                Debug.Log("Not running DouseTorches()");
-            EntityEffectBroker.OnNewMagicRound -= DouseTorches;
         }
 
         private static void TakeTorch(RaycastHit hit)
         {
-            GameObject torch = hit.transform.gameObject;
-            //Vector3 torchPos;
-            //torch = hit.transform.gameObject;
-            //torchPos = torch.transform.position;
-            dousedTorches.Add(torch.transform.position);
-            Debug.Log("Torch name = " + torch.name);
-            Debug.Log("Torch GetType = " + torch.GetType().ToString());
-            Debug.Log("Torch GetInstanceID = " + torch.GetInstanceID().ToString());
-            Debug.Log("Torch tag = " + torch.tag);
-            Debug.Log("Torch GetHashCode = " + torch.GetHashCode().ToString());
-            DouseTorch(torch);
-            DaggerfallUnityItem TorchItem = ItemBuilder.CreateItem(ItemGroups.UselessItems2, (int)UselessItems2.Torch);
-            GameManager.Instance.PlayerEntity.Items.AddItem(TorchItem);
+            if (GameManager.Instance.PlayerActivate.CurrentMode == PlayerActivateModes.Grab || GameManager.Instance.PlayerActivate.CurrentMode == PlayerActivateModes.Steal)
+            {
+                GameObject torch = hit.transform.gameObject;
+                if (torch.GetComponent<DaggerfallAction>() == null)
+                {
+                    dousedTorches.Add(torch.transform.position);
+                    DouseTorch(torch);
+                    DaggerfallUnityItem TorchItem = ItemBuilder.CreateItem(ItemGroups.UselessItems2, (int)UselessItems2.Torch);
+                    GameManager.Instance.PlayerEntity.Items.AddItem(TorchItem);
+                    DaggerfallUI.AddHUDText("You take the torch.");
+                }
+                else
+                {
+                    DaggerfallUI.AddHUDText("The torch is firmly stuck...");
+                }
+            }
+            else if (GameManager.Instance.PlayerActivate.CurrentMode == PlayerActivateModes.Info)
+            {
+                DaggerfallUI.AddHUDText("You see a torch.");
+            }
         }
 
         private static void DouseTorch(GameObject torch)
         {
-            if (torch.name == "DaggerfallBillboard [TEXTURE.210, Index=16]")
+            if (torch.name == "DaggerfallBillboard [TEXTURE.210, Index=16]" || torch.name == "DaggerfallBillboard [TEXTURE.210, Index=17]" || torch.name == "DaggerfallBillboard [TEXTURE.210, Index=18]")
                 torch.SetActive(false);
-            else
-                Debug.Log("Not torch. Object name = " + torch.name);
         }
 
         private static void OnTransitionExterior_ListCleanup(PlayerEnterExit.TransitionEventArgs args)
