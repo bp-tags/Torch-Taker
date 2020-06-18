@@ -138,19 +138,6 @@ namespace TorchTaker
         {           
             if (dousedTorches != null && dousedTorches.Count > 0)
             {
-                //Code for dousing torches that did not work as I do not have any unique idetnifier for the torches.
-                //List<GameObject> allUntaggedObjects = new List<GameObject>(GameObject.FindGameObjectsWithTag("Untagged"));
-                //foreach (GameObject obj in allUntaggedObjects)
-                //{
-                //    foreach (Vector3 torch in dousedTorches)
-                //    {
-                //        if (obj.transform.position == torch)
-                //        {
-                //            Torch = obj;
-                //            DouseTorch(Torch);
-                //        }
-                //    }
-                //}
                 RaycastHit hit;
                 GameObject torch;
                 foreach (Vector3 obj in dousedTorches)
@@ -200,7 +187,8 @@ namespace TorchTaker
 
         private static void OnTransitionExterior_ListCleanup(PlayerEnterExit.TransitionEventArgs args)
         {
-            dousedTorches.Clear();
+            if(dousedTorches != null)
+                dousedTorches.Clear();
         }
     }
 }
