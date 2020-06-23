@@ -173,7 +173,7 @@ namespace TorchTaker
                     DaggerfallUI.AddHUDText("The torch is firmly stuck...");
                 }
             }
-            else if (GameManager.Instance.PlayerActivate.CurrentMode == PlayerActivateModes.Info)
+            else if (GameManager.Instance.PlayerActivate.CurrentMode == PlayerActivateModes.Info || GameManager.Instance.PlayerActivate.CurrentMode == PlayerActivateModes.Talk)
             {
                 DaggerfallUI.AddHUDText("You see a torch.");
             }
