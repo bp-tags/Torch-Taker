@@ -1,6 +1,6 @@
 {
     "ModTitle": "Torch Taker",
-    "ModVersion": "1.0",
+    "ModVersion": "1.0.2",
     "ModAuthor": "Ralzar",
     "DFUnity_Version": "0.10.23",
     "ModDescription": "Allows you to pick torches off the dungeon walls.",

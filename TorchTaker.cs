@@ -27,7 +27,7 @@ namespace TorchTaker
         static TorchTaker instance;
         static GameObject Torch;
         static int dungeonID;
-        static List<Vector3> dousedTorches;
+        static List<Vector3> dousedTorches = new List<Vector3>();
         static bool loadedDousedTorches;
 
         static PlayerEnterExit playerEnterExit = GameManager.Instance.PlayerEnterExit;
@@ -61,6 +61,8 @@ namespace TorchTaker
             var torchTakerSaveData = (TorchTakerSaveData)saveData;
             loadedDousedTorches = false;
             dousedTorches = torchTakerSaveData.DousedTorches;
+            if (dousedTorches == null)
+                dousedTorches = new List<Vector3>();
             DouseTorches();
         }
 
