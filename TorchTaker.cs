@@ -106,8 +106,10 @@ namespace TorchTaker
             DungeonLightHandler[] dfLights = (DungeonLightHandler[])FindObjectsOfType(typeof(DungeonLightHandler)); //Get all dungeon lights in the scene
             for (int i = 0; i < dfLights.Length; i++)
             {
-                if (dfLights[i].gameObject.name == "DaggerfallLight [Dungeon]")
+                if (dfLights[i].gameObject.name.StartsWith("DaggerfallLight [Dungeon]"))
+                {
                     Destroy(dfLights[i].gameObject);
+                }
             }
         }
 
