@@ -78,7 +78,7 @@ namespace TorchTaker
             PlayerActivate.RegisterCustomActivation(mod, 210, 16, TakeTorch);
             PlayerActivate.RegisterCustomActivation(mod, 210, 17, TakeTorch);
             PlayerActivate.RegisterCustomActivation(mod, 210, 18, TakeTorch);
-            
+
             PlayerEnterExit.OnTransitionExterior += OnTransitionExterior_ListCleanup;
             PlayerEnterExit.OnTransitionDungeonExterior += OnTransitionExterior_ListCleanup;
         }
@@ -169,6 +169,7 @@ namespace TorchTaker
                     dousedTorches.Add(torch.transform.position);
                     DouseTorch(torch);
                     DaggerfallUnityItem TorchItem = ItemBuilder.CreateItem(ItemGroups.UselessItems2, (int)UselessItems2.Torch);
+                    TorchItem.currentCondition /= UnityEngine.Random.Range(2, 4);
                     GameManager.Instance.PlayerEntity.Items.AddItem(TorchItem);
                     DaggerfallUI.AddHUDText("You take the torch.");
                 }
@@ -185,7 +186,9 @@ namespace TorchTaker
 
         private static void DouseTorch(GameObject torch)
         {
-            if (torch.name == "DaggerfallBillboard [TEXTURE.210, Index=16]" || torch.name == "DaggerfallBillboard [TEXTURE.210, Index=17]" || torch.name == "DaggerfallBillboard [TEXTURE.210, Index=18]")
+            if (torch.name.StartsWith("DaggerfallBillboard [TEXTURE.210, Index=16]") ||
+                torch.name.StartsWith("DaggerfallBillboard [TEXTURE.210, Index=17]") ||
+                torch.name.StartsWith("DaggerfallBillboard [TEXTURE.210, Index=18]"))
                 torch.SetActive(false);
         }
 
